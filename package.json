@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "ts-node-dev --transpile-only --no-notify --exit-child src/index.ts",
     "generate": "ts-node --transpile-only src/schema.ts",
-    "test": "dotenv -e .env.test jest -i"
+    "test": "dotenv -e .env.test jest -i",
+    "migrate:deploy": "prisma migrate deploy",
+    "build": "prisma generate && npm run generate && tsc",
+    "start": "node dist/src/index.js"
   },
   "author": "",
   "license": "ISC",
