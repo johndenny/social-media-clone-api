@@ -393,7 +393,11 @@ export const SavedPostMutation = extendType({
           data: { name, nameLink, createdById: userId },
         });
 
-        if (!newPostId && !savedPostIds) return collection;
+        if (!newPostId && !savedPostIds)
+          return {
+            posts: [],
+            collection,
+          };
 
         if (savedPostIds)
           await context.prisma.collectedPost.createMany({
