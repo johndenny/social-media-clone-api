@@ -1,0 +1,332 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model EmailConfirmation {
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  passcode      Int
+  email         String   @unique
+  valid         Boolean  @default(false)
+}
+
+model SavedPost {
+  savedAt       DateTime @default(now())
+  savedBy       User   @relation(fields: [savedById], references: [id])
+  savedById     String
+  post          Post   @relation(fields: [postId], references: [id])
+  postId        String
+
+  @@id([savedById, postId])
+}
+
+model CollectedPost {
+  createdAt    DateTime @default(now())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  postId       String
+  post         Post       @relation(fields: [postId], references: [id])
+
+  @@id([collectionId, postId])
+}
+
+model Collection {
+  id           String @id @default(uuid())
+  name         String
+  nameLink     String
+  updatedAt    DateTime @default(now())
+  createdById  String
+  posts        CollectedPost[]
+}
+
+model HashTag { 
+  id            String @id @default(uuid())
+  name          String @unique
+  posts         Post[]
+  searchedFor   HashTagSearch[]
+} 
+
+model Location {
+  id            Int @id
+  name          String
+  lat           String
+  lon           String
+  posts         Post[]
+}
+
+model Chat {
+  id            String     @id @default(uuid())
+  name          String     @default("")
+  createdById   String
+  createdBy     User       @relation("created",fields: [createdById], references: [id])
+  admins        User[]     @relation("admins")
+  members       User[]     @relation("member")
+  messages      Message[]
+  lastestMessageId String? @unique
+  latestMessage Message?   @relation( "latestMessage", fields: [lastestMessageId], references: [id])
+  acceptedBy    User[]
+}
+
+model Message {
+  id            String        @id @default(uuid())
+  createdAt     DateTime      @default(now())
+  type          String  
+  text          String?     
+  sticker       String?     
+  postId        String?   
+  userId        String?
+  user          User?         @relation("activityUser", fields: [userId], references: [id])  
+  post          Post?         @relation(fields: [postId], references: [id])
+  photoId       String?       @unique
+  photo         Photo?        @relation(fields: [photoId], references: [id])
+  messageId     String?      
+  message       Message?      @relation("message", fields: [messageId], references: [id])
+  messages      Message[]     @relation("message")
+  likeId        String?
+  like          MessageLike?  @relation(fields: [likeId, sentById], references: [messageId, userId], onDelete: Cascade)
+  chatId        String     
+  chat          Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sentById      String      
+  sentBy        User          @relation(fields: [sentById], references: [id])
+  readAt        DateTime?
+  readBy        User[]        @relation("readBy")                
+  likes         MessageLike[] @relation("messageLikes")
+  latestChat    Chat?         @relation("latestMessage")
+}
+
+model Activity {
+  id            String       @id @default(uuid())
+  createdAt     DateTime     @default(now())
+  type          String    
+  isRead        Boolean      @default(false)
+  sentById      String    
+  sentBy        User         @relation("sentBy", fields: [sentById], references: [id])
+  receivedById  String    
+  receivedBy    User         @relation("receivedBy", fields: [receivedById], references: [id])
+  postId        String?    
+  post          Post?        @relation(fields: [postId], references: [id])
+  likeUserId    String?
+  like          Like?        @relation(fields: [likeUserId, postId], references: [userId, postId], onDelete: Cascade)
+  commentId     String?
+  comment       Comment?     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentLikeId String?
+  commentLike   CommentLike? @relation(fields: [commentLikeId, commentId], references: [userId, commentId], onDelete: Cascade)
+  replyId       String?
+  reply         Reply?       @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  replyLikeId   String?
+  replyLike     ReplyLike?   @relation(fields: [replyLikeId, replyId], references: [userId, replyId], onDelete: Cascade)
+}
+ 
+model Post { 
+  id            String   @id @default(uuid())
+  createdAt     DateTime @default(now())
+  text          String
+  postedBy      User     @relation(name: "PostedBy", fields: [postedById], references: [id])
+  postedById    String 
+  likes         Like[]
+  comments      Comment[]
+  replies       Reply[]
+  photos        Photo[]
+  tags          Tag[]
+  tagsHidden    User[] 
+  hashTags      HashTag[]
+  saved         SavedPost[]
+  messaged      Message[]
+  activity      Activity[]
+  locationId    Int?
+  location      Location? @relation(fields: [locationId], references: [id])
+  collected     CollectedPost[]
+  isEdited      Boolean @default(false)
+} 
+
+model Photo {
+  id            String   @id @unique
+  createdAt     DateTime @default(now())
+  post          Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String?
+  message       Message?
+  aspectRatio   Float 
+  tags          Tag[]   
+}
+
+model Tag {
+  photo         Photo  @relation(fields: [photoId], references: [id])
+  photoId       String
+  post          Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String
+  x             Int
+  y             Int
+  user          User   @relation(fields: [userId], references: [id])
+  userId        String  
+
+  @@id([photoId, userId])   
+}
+
+model Comment {
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String
+  id            String        @id @default(uuid())
+  createdAt     DateTime      @default(now())
+  text          String
+  postedBy      User          @relation(fields: [postedById], references: [id])
+  postedById    String
+  likes         CommentLike[] 
+  isEdited      Boolean       @default(false)
+  replies       Reply[]
+  activity      Activity[]
+}
+
+model Reply {
+  comment       Comment     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId     String 
+  postId        String
+  post          Post        @relation(fields: [postId], references: [id])
+  id            String      @id @default(uuid())
+  createdAt     DateTime    @default(now())
+  text          String
+  postedBy      User        @relation(fields: [postedById], references: [id])
+  postedById    String
+  likes         ReplyLike[]
+  isEdited      Boolean     @default(false)
+  activity      Activity[]
+}
+
+model UserSearch {
+  createdAt     DateTime @default(now())
+  userId        String
+  user          User     @relation( fields: [userId], references: [id])
+  searchedById  String
+
+  @@id([userId, searchedById])
+}
+
+model HashTagSearch {
+  createdAt     DateTime @default(now())
+  hashTagName   String 
+  hashTag       HashTag  @relation(fields: [hashTagName], references: [name])
+  searchedById  String
+
+  @@id([hashTagName, searchedById])
+}
+
+model User {
+  id            String        @id @default(uuid())
+  username      String        @unique
+  fullName      String        @default("")
+  bio           String        @default("")
+  url           String        @default("")
+  gender        String        @default("")
+  email         String        @unique
+  password      String
+  isPrivate     Boolean       @default(false)
+  photoVersion  Int           @default(0)
+  posts         Post[]        @relation(name: "PostedBy")
+  tokenVersion  Int           @default(0)
+  likes         Like[]
+  commentLikes  CommentLike[]
+  replyLikes    ReplyLike[]
+  comments      Comment[]
+  replies       Reply[]
+  followedBy    Follows[]     @relation("following")
+  following     Follows[]     @relation("follower")
+  isFollowing   Boolean       @default(false)
+  tagged        Tag[]
+  savedPosts    SavedPost[]
+  searchedFor   UserSearch[]
+  chats         Chat[]        @relation("member")
+  chatAdmins    Chat[]        @relation("admins")
+  messages      Message[]
+  chatsCreated  Chat[]        @relation("created")
+  readBy        Message[]     @relation("readBy")
+  activitySent  Activity[]    @relation("sentBy")
+  activityRecieved Activity[] @relation("receivedBy")
+  messageLikes  MessageLike[]
+  messageActivity Message[]   @relation("activityUser")
+  hiddenUsers   HiddenUser[]  @relation("hiddenUser")
+  hiddenViewers HiddenUser[]  @relation("hiddenViewer")
+  userRequest   FollowRequest[] @relation("userRequestFollow")
+  userRecieve   FollowRequest[] @relation("userReceiveFollow")
+  acceptedChats Chat[]
+  hiddenTags    Post[]
+}
+
+model HiddenUser {
+  userId        String
+  user          User   @relation("hiddenUser", fields: [userId], references: [id])
+  viewerId      String
+  viewer        User   @relation("hiddenViewer", fields: [viewerId], references: [id])
+
+  @@id([userId, viewerId])
+}
+
+model FollowRequest {
+  createdAt     DateTime @default(now())
+  isRead        Boolean  @default(false)
+  userRequestId String
+  userRequest   User     @relation("userRequestFollow", fields: [userRequestId], references: [id])
+  userReceiveId String
+  userRecieve   User     @relation("userReceiveFollow", fields: [userReceiveId], references: [id])
+
+  @@id([userReceiveId, userRequestId])
+}
+
+model Follows {
+  createdAt     DateTime @default(now())
+  follower      User   @relation("follower", fields: [followerId], references: [id])
+  followerId    String
+  following     User   @relation("following", fields: [followingId], references: [id])
+  followingId   String
+
+  @@id([followerId, followingId])
+}
+
+model CommentLike {
+  createdAt     DateTime @default(now())
+  user          User    @relation(fields: [userId], references: [id])
+  userId        String
+  comment       Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId     String
+  activity      Activity[]
+
+  @@id([userId, commentId])
+}
+
+model ReplyLike {
+  createdAt     DateTime @default(now())
+  user          User  @relation(fields: [userId], references: [id])
+  userId        String
+  reply         Reply @relation(fields: [replyId], references: [id], onDelete: Cascade)
+  replyId       String
+  activity      Activity[]
+
+  @@id([userId, replyId])
+}
+
+model Like {
+  createdAt     DateTime @default(now())
+  user          User @relation(fields: [userId], references: [id])
+  userId        String
+  post          Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId        String
+  activity      Activity[]
+
+  @@id([userId, postId])
+}
+
+model MessageLike {
+  createdAt     DateTime @default(now())
+  reaction      String    
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  message       Message   @relation( "messageLikes", fields: [messageId], references: [id])
+  messageId     String
+  messages      Message[]
+
+  @@id([userId, messageId])
+}
