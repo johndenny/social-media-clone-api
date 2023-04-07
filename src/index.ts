@@ -17,12 +17,14 @@ async function startApolloServer() {
   const app = express();
   app.use(cookieParser());
   app.use(bodyParser.json({ limit: "50mb" }));
+
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_KEY,
     api_secret: process.env.CLOUDINARY_SECRET,
     secure: true,
   });
+
   const httpServer = http.createServer(app);
 
   const wsServer = new WebSocketServer({

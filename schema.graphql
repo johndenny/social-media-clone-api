@@ -308,6 +308,7 @@ type Mutation {
   sharePost(ids: [String!]!, postId: String!, text: String!): [Message]!
   showTag(postId: String!): Post!
   signup(email: String!, fullName: String!, password: String!, username: String!): AuthPayload!
+  testMail: EmailConfirmation!
   unfollow(username: String!): Follows
   unlike(postId: String!): Post
   unlikeMessage(messageId: String!): Message

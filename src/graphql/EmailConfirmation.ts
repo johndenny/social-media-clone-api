@@ -1,6 +1,5 @@
 import { extendType, intArg, nonNull, objectType, stringArg } from "nexus";
 import * as nodemailer from "nodemailer";
-import { resolve } from "path";
 
 export const EmailConfirmation = objectType({
   name: "EmailConfirmation",
@@ -38,35 +37,29 @@ export const EmailConfirmationMutation = extendType({
             passcode,
           },
         });
-        // Generate test SMTP service account from ethereal.email
-        // Only needed if you don't have a real mail account for testing
-        let testAccount = await nodemailer.createTestAccount();
 
-        // create reusable transporter object using the default SMTP transport
         let transporter = nodemailer.createTransport({
-          host: "smtp.ethereal.email",
+          host: "smtp-relay.sendinblue.com",
           port: 587,
           secure: false, // true for 465, false for other ports
           auth: {
-            user: testAccount.user, // generated ethereal user
-            pass: testAccount.pass, // generated ethereal password
+            user: process.env.SENDINBLUE_USER,
+            pass: process.env.SENDINBLUE_PWD,
           },
         });
 
-        // send mail with defined transport object
         let info = await transporter.sendMail({
-          from: '"Instagram Clone" <InstagramClone@fake.com>', // sender address
-          to: email, // list of receivers
-          subject: "Email Confirmation Code", // Subject line
-          text: `This is your confirmation code: ${passcode}`, // plain text body
-          html: `<b>This is your confirmation code: ${passcode}</b>`, // html body
+          from: '"Social Media Clone" <no-reply@john-denny-social-media-clone.onrender.com>',
+          to: email,
+          subject: "Email Confirmation Code",
+          text: `This is your confirmation code: ${passcode}`,
+          html: `<p style="font-size: 24px; text-align: center; margin-top: 36px">This is your confirmation code: <b>${passcode}</b></p>`,
         });
 
-        console.log("Message sent: %s", info.messageId);
-        // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-        // Preview only available when sending through an Ethereal account
-        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        console.log("Email Confirmation sent:", info.messageId, {
+          email,
+          passcode,
+        }); // email and passcode exposed to populate db with fake accounts.
         return {
           status: true,
         };

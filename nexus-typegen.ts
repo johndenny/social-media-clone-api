@@ -642,6 +642,7 @@ export interface NexusGenFieldTypes {
     sharePost: Array<NexusGenRootTypes['Message'] | null>; // [Message]!
     showTag: NexusGenRootTypes['Post']; // Post!
     signup: NexusGenRootTypes['AuthPayload']; // AuthPayload!
+    testMail: NexusGenRootTypes['EmailConfirmation']; // EmailConfirmation!
     unfollow: NexusGenRootTypes['Follows'] | null; // Follows
     unlike: NexusGenRootTypes['Post'] | null; // Post
     unlikeMessage: NexusGenRootTypes['Message'] | null; // Message
@@ -1160,6 +1161,7 @@ export interface NexusGenFieldTypeNames {
     sharePost: 'Message'
     showTag: 'Post'
     signup: 'AuthPayload'
+    testMail: 'EmailConfirmation'
     unfollow: 'Follows'
     unlike: 'Post'
     unlikeMessage: 'Message'

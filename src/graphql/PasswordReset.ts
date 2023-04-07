@@ -1,14 +1,10 @@
 import { extendType, nonNull, objectType, stringArg } from "nexus";
-import {
-  createAccessToken,
-  createPasswordResetToken,
-  createRefreshToken,
-} from "../utils/auth";
+import { createPasswordResetToken } from "../utils/auth";
 import * as nodemailer from "nodemailer";
 import { verify } from "jsonwebtoken";
 import * as bcrypt from "bcryptjs";
 
-const URL = "http://localhost:3000";
+const URL = "https://john-denny-social-media-clone.onrender.com";
 
 export const SendReset = objectType({
   name: "sendReset",
@@ -40,44 +36,41 @@ export const PasswordResetMutation = extendType({
         email: nonNull(stringArg()),
       },
       async resolve(_parent, args, context) {
+        //email could be a username or email.
         const { email } = args;
-        let user: any = null;
-        if (email.includes("@")) {
-          user = await context.prisma.user.findUnique({
-            where: { email },
-          });
-        } else {
-          user = await context.prisma.user.findUnique({
-            where: { username: email },
-          });
-        }
+
+        let user = email.includes("@")
+          ? await context.prisma.user.findUnique({
+              where: { email },
+            })
+          : await context.prisma.user.findUnique({
+              where: { username: email },
+            });
         if (!user) {
           throw new Error("No User Found.");
         }
+
         const resetToken = createPasswordResetToken(user);
 
-        let testAccount = await nodemailer.createTestAccount();
-
         let transporter = nodemailer.createTransport({
-          host: "smtp.ethereal.email",
+          host: "smtp-relay.sendinblue.com",
           port: 587,
           secure: false, // true for 465, false for other ports
           auth: {
-            user: testAccount.user, // generated ethereal user
-            pass: testAccount.pass, // generated ethereal password
+            user: process.env.SENDINBLUE_USER,
+            pass: process.env.SENDINBLUE_PWD,
           },
         });
 
         let info = await transporter.sendMail({
-          from: '"Instagram Clone" <InstagramClone@fake.com>', // sender address
-          to: user.email, // list of receivers
-          subject: "Password Reset Link", // Subject line
+          from: '"Social Media Clone" <no-reply@john-denny-social-media-clone.onrender.com>',
+          to: user.email,
+          subject: "Password Reset Link",
           text: `This is your Reset Link: ${URL}/accounts/password/reset/confirm/?uid=${user.id}&token=${resetToken}`, // plain text body
           html: `This is your Reset Link: ${URL}/accounts/password/reset/confirm/?uid=${user.id}&token=${resetToken}`, // html body
         });
 
-        console.log("Message sent: %s", info.messageId);
-        console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        console.log("Password reset sent:", info.messageId);
         const emailName = user.email.split("@")[0];
         const emailAddress = user.email.split("@")[1];
         const firstletter = emailName[0];
