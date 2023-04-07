@@ -191,7 +191,12 @@ export const AuthMutation = extendType({
       type: AuthPayload,
       resolve(_parent, _args, context) {
         const { res } = context;
-        res.clearCookie("jid");
+        res.clearCookie("jid", {
+          httpOnly: true,
+          secure: true,
+          sameSite: "none",
+          maxAge: 1000 * 60 * 60 * 24 * 7,
+        });
         return {
           accessToken: "",
         };
